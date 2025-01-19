@@ -1,0 +1,35 @@
+## Interface: 30300
+## X-Compatible-With: 30300
+## Title: Plate Buffs |cff00bbeeAwesomeWotlk Edition|r by |cFFC41F3BMori|r
+## Version: 1.18.3 (r232), upd: 25/12/2024 (some random guy)
+## Notes: Show auras on nameplates.
+## Author: Cyprias (Kader Backport). Mod/fork by some random guy. Version of: 25/12/2024. GitHub/YouTube: @mrcatsoul, Discord: @dpshero, |cFFC41F3BTombstalker|r/|cFFffffffМораль|r/|cFFC41F3BMoriarty|r~WoWCircle WotLK
+## SavedVariables: PB_DB
+## OptionalDeps: LibStub, CallbackHandler-1.0, LibNameplate-1.0
+## X-Curse-Packaged-Version: r230
+## X-Curse-Project-Name: PlateBuffs
+## X-Curse-Project-ID: platebuffs
+## X-Curse-Repository-ID: wow/platebuffs/mainline
+## X-Curse-Packaged-Version: r230
+## X-Curse-Project-Name: PlateBuffs
+## X-Curse-Project-ID: platebuffs
+## X-Curse-Repository-ID: wow/platebuffs/mainline
+
+## X-Website: https://github.com/bkader/PlateBuffs_WoTLK
+## X-Discord: https://discord.gg/a8z5CyS3eW
+## X-License: All Rights Reserved
+## X-Date: 2022-05-25 @ 10:45 AM |cff808080UTC|r, upd: 25/12/2024 (some random guy)
+
+## X-Maintained: Mod/fork by some random guy. Version of: 25/12/2024. GitHub/YouTube: @mrcatsoul, Discord: @dpshero, |cFFC41F3BTombstalker|r/|cFFffffffМораль|r/|cFFC41F3BMoriarty|r~WoWCircle WotLK
+
+## LoadManagers: AddonLoader
+## X-LoadOn-Always: true
+
+libs\embeds.xml
+locales\locales.xml
+
+func.lua
+core.lua
+frames.lua
+options.lua
+combatlog.lua
