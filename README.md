@@ -4,7 +4,7 @@ Fork of: https://github.com/bkader/PlateBuffs_WoTLK
 
 Changes: 
 - Now the code uses functions from the AwesomeWotlk library, we have nameplate tokens (UnitID), and thanks to this, their exact GUIDs. See: https://github.com/FrostAtom/awesome_wotlk
-- Potentially updated, fixed the bug where time-infinite auras (like flags on Warsong Gulch/Arathi Basin) weren't displaying, a mistake made by the author (Kader).
+- Potentially updated, fixed the bug where time-infinite auras (like flags on Warsong Gulch/Arathi Basin) weren't displaying, a mistake made by the author.
 - I haven't noticed any fake auras on nameplates while testing.
 - The difference from the others versions of PlateBuffs circulating on the internet: thanks to the AwesomeWotlk library, it works by GUID, so when a nameplate appears on screen after being hidden, the auras show up instantly. 
 - Additionally, there won’t be any duplicate auras on nameplates with the same name.
