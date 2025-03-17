@@ -24,6 +24,9 @@ if not lib.callbacks then
 	return
 end
 
+local C_NamePlate=C_NamePlate
+local awesomewotlk=C_NamePlate~=nil
+
 local pairs = pairs
 local ipairs = ipairs
 local select = select
@@ -38,6 +41,9 @@ local UnitName = UnitName
 local UnitIsUnit = UnitIsUnit
 local UnitHealth = UnitHealth
 local UnitHealthMax = UnitHealthMax
+local UnitAffectingCombat = UnitAffectingCombat
+local UnitIsPlayer = UnitIsPlayer
+local UnitReaction = UnitReaction
 local _
 
 local fastOnFinishThrottle = 0.25 -- check combat & threat every x seconds.
@@ -231,13 +237,23 @@ do
 	local lastUpdated = 0
 	local function onUpdate(this, elapsed)
 		lastUpdated = lastUpdated + elapsed
-		if lastUpdated > 0.01 then
+    if lastUpdated > 0.1 then  --++
+		--if lastUpdated > 0.01 then
 			lastUpdated = 0
-			curChildren = WorldFrame:GetNumChildren()
-			if curChildren ~= prevChildren then
-				prevChildren = curChildren
-				ScanWorldFrameChildren(WorldFrame:GetChildren())
-			end
+      
+      if awesomewotlk then  --++
+        for _,nameplate in ipairs(C_NamePlate.GetNamePlates()) do
+          if nameplate:IsShown() and not lib.nameplates[nameplate] and IsNamePlateFrame(nameplate) then
+            lib:NameplateFirstLoad(nameplate)
+          end
+        end
+      else
+        curChildren = WorldFrame:GetNumChildren()
+        if curChildren ~= prevChildren then
+          prevChildren = curChildren
+          ScanWorldFrameChildren(WorldFrame:GetChildren())
+        end
+      end
 		end
 	end
 
@@ -340,6 +356,7 @@ do
 
 	function FindGUIDByRaidIcon(frame, raidNum, from)
 		for unitID in UnitIterator() do
+      --print(unitID)
 			if CheckRaidIconOnUnit(unitID, frame, raidNum, from) then
 				return
 			end
@@ -620,20 +637,6 @@ local function GetHealthBarColor(frame)
 	end
 end
 
-local function reactionByColor(red, green, blue, a)
-	if red < .01 and blue < .01 and green > .99 then
-		return "FRIENDLY", "NPC"
-	elseif red < .01 and blue > .99 and green < .01 then
-		return "FRIENDLY", "PLAYER"
-	elseif red > .99 and blue < .01 and green > .99 then
-		return "NEUTRAL", "NPC"
-	elseif red > .99 and blue < .01 and green < .01 then
-		return "HOSTILE", "NPC"
-	else
-		return "HOSTILE", "PLAYER"
-	end
-end
-
 local function combatByColor(r, g, b, a)
 	return (r > .5 and g < .5)
 end
@@ -646,6 +649,12 @@ do
 	f:RegisterEvent("PLAYER_TARGET_CHANGED")
 	f:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 	f:RegisterEvent("RAID_TARGET_UPDATE")
+  
+  if awesomewotlk then
+    f:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+    f:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+    f:RegisterEvent("UNIT_FACTION")
+  end
 
 	local mouseoverPlate
 	f:SetScript("OnEvent", function(self, event, ...)
@@ -668,6 +677,33 @@ do
 					end
 				end
 			end
+		elseif event == "NAME_PLATE_UNIT_ADDED" then
+      local nameplateToken = ...
+      if nameplateToken then
+        local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
+        if nameplate then
+          nameplate.nameplateToken = nameplateToken
+          nameplate.unitReaction = UnitReaction(nameplateToken, "player")
+          FoundPlateGUID(nameplate, UnitGUID(nameplateToken), nameplateToken, "NAME_PLATE_UNIT_ADDED") --++
+        end
+      end
+    elseif event == "NAME_PLATE_UNIT_REMOVED" then
+      local nameplateToken = ...
+      if nameplateToken then
+        local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
+        if nameplate then
+          nameplate.nameplateToken=nil
+          nameplate.unitReaction=nil
+        end
+      end
+    elseif event == "UNIT_FACTION" then
+      local nameplateToken = ...
+      if nameplateToken then
+        local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
+        if nameplate then
+          nameplate.unitReaction = UnitReaction(nameplateToken, "player")
+        end
+      end
 		end
 	end)
 	f:SetScript("OnUpdate", function(self, elapsed)
@@ -821,20 +857,28 @@ function lib:GetRaidIconRegion(frame)
 	return select(regionIndex.raidIcon, frame:GetRegions())
 end
 
+--++
 function lib:IsTarget(frame, quick)
 	if not frame then return end
 	quick = quick or (frame:IsShown() and UnitExists("target"))
+  
+  if C_NamePlate then
+    if frame == C_NamePlate.GetNamePlateForUnit("target") then
+      return true
+    end
+  else
 
-	-- if frame.UnitFrame then -- ElvUI
-	-- 	if not self.fakePlate[frame] then
-	-- 		self.fakePlate[frame] = frame.UnitFrame
-	-- 		self.realPlate[frame.UnitFrame] = frame
-	-- 	end
-	-- 	return quick and (frame.UnitFrame.alpha == 1) or false
-	-- end
+    -- if frame.UnitFrame then -- ElvUI
+    -- 	if not self.fakePlate[frame] then
+    -- 		self.fakePlate[frame] = frame.UnitFrame
+    -- 		self.realPlate[frame.UnitFrame] = frame
+    -- 	end
+    -- 	return quick and (frame.UnitFrame.alpha == 1) or false
+    -- end
 
-	frame = self.realPlate[frame] or frame
-	return quick and (frame:GetAlpha() == 1) or false
+    frame = self.realPlate[frame] or frame
+    return quick and (frame:GetAlpha() == 1) or false
+  end
 end
 
 function lib:GetHealthBar(frame)
@@ -862,37 +906,73 @@ function lib:GetCastBar(frame)
 	return select(childIndex.castBar, frame:GetChildren())
 end
 
+--++
+function lib:C_NamePlate_GetUnitID(frame)
+  for i, _frame in ipairs(C_NamePlate.GetNamePlates()) do
+    if frame == _frame then
+      --print("C_NamePlate_GetUnitID",frame.nameplateToken)
+      return frame.nameplateToken or ""
+    end
+  end
+  return ""
+end
+
+--++
 function lib:GetName(frame)
 	if not frame then return end
 	frame = self.realPlate[frame] or frame
-	local region = self.plateRegions[frame].nameText
-	if region and region.GetText then
-		return noColorText[region:GetText()]
-	end
+  
+  if frame.origSavedName then
+    --print("|cff00ff00lib:GetName|r (frame.origSavedName)")
+    return frame.origSavedName
+  elseif C_NamePlate then
+    local name = UnitName(self:C_NamePlate_GetUnitID(frame))
+    if name then 
+      return name
+    end
+
+    local region = self.plateRegions[frame].nameText
+    if region and region.GetText then
+      return noColorText[region:GetText()]
+    end
+  end
 end
 
+--++
 function lib:IsInCombat(frame)
 	if not frame then return end
 	frame = self.realPlate[frame] or frame
-	local region = self.plateRegions[frame].nameText
-	if region and region.GetTextColor then
-		return combatByColor(region:GetTextColor()) and true or false
-	end
+  
+  if C_NamePlate then
+    return UnitAffectingCombat(self:C_NamePlate_GetUnitID(frame))
+  else
+    local region = self.plateRegions[frame].nameText
+    if region and region.GetTextColor then
+      return combatByColor(region:GetTextColor()) and true or false
+    end
+  end
+  return false
 end
 
 do
+  local UnitLevel = UnitLevel
+
 	function lib:GetLevel(frame)
 		if not frame then return end
 		frame = self.realPlate[frame] or frame
-		local region = self.plateRegions[frame].levelText
-		if region and region.GetText then
-			return noColorNum[region:GetText()]
-		end
+    
+    if C_NamePlate then
+      return UnitLevel(self:C_NamePlate_GetUnitID(frame))
+    else
+      local region = self.plateRegions[frame].levelText
+      if region and region.GetText then
+        return noColorNum[region:GetText()]
+      end
+    end
 		return 0
 	end
 
 	local greenRange = 5 --GetQuestGreenRange()
-	local UnitLevel = UnitLevel
 	function lib:GetLevelDifficulty(frame)
 		local level = self:GetLevel(frame)
 		diff = level - UnitLevel("player")
@@ -936,12 +1016,21 @@ function lib:GetThreatSituation(frame)
 	end
 end
 
+--++
 function lib:IsMouseover(frame)
 	frame = self.realPlate[frame] or frame
-	local region = self.plateRegions[frame].highlightTexture
-	if region and region.IsShown then
-		return region:IsShown() and (region:GetAlpha() > 0) or false
-	end
+  
+  if C_NamePlate then
+    if frame == C_NamePlate.GetNamePlateForUnit("mouseover") then
+      return true
+    end
+  else
+    local region = self.plateRegions[frame].highlightTexture
+    if region and region.IsShown then
+      return region:IsShown() and (region:GetAlpha() > 0) or false
+    end
+  end
+  return false
 end
 
 ------------------------------------------------------------------------------------------------------------------
@@ -1024,19 +1113,38 @@ local function reactionByColor(red, green, blue, a)
 end
 
 function lib:GetType(frame)
-	frame = self.realPlate[frame] or frame
-	local r, g, b = GetHealthBarColor(frame)
-	if r then
-		return select(2, reactionByColor(r, g, b))
-	end
+  frame = self.realPlate[frame] or frame
+  
+  if C_NamePlate and frame.nameplateToken then
+    return UnitIsPlayer(frame.nameplateToken) and "PLAYER" or "NPC"
+  else
+    local r, g, b = GetHealthBarColor(frame)
+    if r then
+      return select(2, reactionByColor(r, g, b))
+    end
+  end
 end
 
 function lib:GetReaction(frame)
 	frame = self.realPlate[frame] or frame
-	local r, g, b = GetHealthBarColor(frame)
-	if r then
-		return reactionByColor(r, g, b)
-	end
+  
+  if C_NamePlate then
+    local react = frame.unitReaction
+    if react then
+      if react <= 3 then
+        return "HOSTILE"
+      elseif react == 4 then
+        return "NEUTRAL"
+      else
+        return "FRIENDLY"
+      end
+    end
+  else
+    local r, g, b = GetHealthBarColor(frame)
+    if r then
+      return reactionByColor(r, g, b)
+    end
+  end
 end
 
 do
@@ -1057,80 +1165,150 @@ do
 	end
 end
 
+--++
 function lib:GetHealthMax(frame)
 	frame = self.realPlate[frame] or frame
-	local bar = self.plateChildren[frame].healthBar
-	if bar and bar.GetMinMaxValues then
-		local _, max = bar:GetMinMaxValues()
-		return tonumber(max or 0)
-	end
+  
+  if C_NamePlate then
+    return UnitHealthMax(self:C_NamePlate_GetUnitID(frame))
+  else
+    local bar = self.plateChildren[frame].healthBar
+    if bar and bar.GetMinMaxValues then
+      local _, max = bar:GetMinMaxValues()
+      return tonumber(max or 0)
+    end
+  end
 end
 
+--++
 function lib:GetHealth(frame)
 	frame = self.realPlate[frame] or frame
-	local bar = self.plateChildren[frame].healthBar
-	if bar and bar.GetValue then
-		return bar:GetValue()
-	end
+  
+  if C_NamePlate then
+    return UnitHealth(self:C_NamePlate_GetUnitID(frame))
+  else
+    local bar = self.plateChildren[frame].healthBar
+    if bar and bar.GetValue then
+      return bar:GetValue()
+    end
+  end
 end
 
+--++
 function lib:GetGUID(frame)
 	frame = self.realPlate[frame] or frame
-  if frame.guid then return frame.guid end --++
-	if self.nameplates[frame] and self.nameplates[frame] ~= true then
-    print("|cff00ff00lib:GetGUID|r",self.nameplates[frame])
-		return self.nameplates[frame]
-	end
+  
+  if C_NamePlate then
+    return UnitGUID(self:C_NamePlate_GetUnitID(frame))
+  else
+    -- if frame.guid then 
+      -- print("|cff00ff00lib:GetGUID|r (frame.guid)")
+      -- return frame.guid 
+    -- end 
+    
+    if self.nameplates[frame] and self.nameplates[frame] ~= true then
+      --print("|cff00ff00GetGUID|r (self.nameplates[frame])")
+      return self.nameplates[frame]
+    end
+  end
 end
 
+--++
 function lib:GetTargetNameplate()
 	if UnitExists("target") then
-		for frame in pairs(self.nameplates) do
-			local f = self.fakePlate[frame] or frame
-			if f:IsShown() and f:GetAlpha() == 1 then
-				return f
-			end
-		end
+    if C_NamePlate then
+      return C_NamePlate.GetNamePlateForUnit("target") 
+    else
+      for frame in pairs(self.nameplates) do
+        local f = self.fakePlate[frame] or frame
+        if f:IsShown() and f:GetAlpha() == 1 then
+          return f
+        end
+      end
+    end
 	end
 end
 
+--++
 function lib:GetNameplateByGUID(GUID)
-	if not GUID then return end
-	for frame, guid in pairs(self.nameplates) do
-		if guid == GUID then
-			return self.fakePlate[frame] or frame
-		end
-	end
+	if not GUID then 
+    --print("|cffff0000GetNameplateByGUID - not GUID") 
+    return 
+  end
+
+  if C_NamePlate then
+    for _, frame in ipairs(C_NamePlate.GetNamePlates()) do
+      if frame:IsShown() then
+        local guid = frame.nameplateToken and UnitGUID(frame.nameplateToken)
+        --print("|cffffff00",i,"/",#C_NamePlate.GetNamePlates(),frame.nameplateToken)
+        if guid and guid == GUID then
+          --print("|cff00ff00GetNameplateByGUID",guid)
+          return self.fakePlate[frame] or frame
+        end
+      end
+    end
+  else
+    for frame, guid in pairs(self.nameplates) do
+      if guid == GUID then
+        return self.fakePlate[frame] or frame
+      end
+    end
+  end
+  
+  --print("|cffff0000GetNameplateByGUID - NIL",GUID)
 end
 
+--++
 function lib:GetNameplateByName(name, maxHp)
-	for frame in pairs(self.nameplates) do
-		if frame:IsShown() then
-			if name == lib:GetName(frame) then
-				if not maxHp then
-					return self.fakePlate[frame] or frame
-				end
-				local bar = self.plateChildren[frame].healthBar
-				if bar and bar.GetMinMaxValues then
-					local _, barMax = bar:GetMinMaxValues()
-					if barMax == maxHp then
-						return self.fakePlate[frame] or frame
-					end
-				end
-			end
-		end
-	end
+  if C_NamePlate then
+    for _, frame in ipairs(C_NamePlate.GetNamePlates()) do
+      local _name = frame.nameplateToken and UnitName(frame.nameplateToken)
+      if name and name == _name then
+        if not maxHp then
+          return self.fakePlate[frame] or frame
+        end
+        local _maxhp = UnitHealthMax(frame.nameplateToken)
+        if _maxhp == maxHp then
+          return self.fakePlate[frame] or frame
+        end
+      end
+    end
+  else
+    for frame in pairs(self.nameplates) do
+      if frame:IsShown() then
+        if name == lib:GetName(frame) then
+          if not maxHp then
+            return self.fakePlate[frame] or frame
+          end
+          local bar = self.plateChildren[frame].healthBar
+          if bar and bar.GetMinMaxValues then
+            local _, barMax = bar:GetMinMaxValues()
+            if barMax == maxHp then
+              return self.fakePlate[frame] or frame
+            end
+          end
+        end
+      end
+    end
+  end
 end
 
 function lib:GetNameplateByUnit(unitID)
-	if UnitIsUnit(unitID, "target") then
-		return self:GetTargetNameplate()
-	end
-	local frame = self:GetNameplateByGUID(UnitGUID(unitID))
-	if not frame then
-		frame = self:GetNameplateByName(UnitName(unitID), UnitHealthMax(unitID))
-	end
-	return frame
+  if C_NamePlate then
+    return C_NamePlate.GetNamePlateForUnit(unitID)
+  else
+    if UnitIsUnit(unitID, "target") then
+      return self:GetTargetNameplate()
+    end
+    
+    local frame = self:GetNameplateByGUID(UnitGUID(unitID))
+    
+    if not frame then
+      frame = self:GetNameplateByName(UnitName(unitID), UnitHealthMax(unitID))
+    end
+    
+    return frame
+  end
 end
 
 do
