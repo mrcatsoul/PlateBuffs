@@ -6,7 +6,7 @@ Changes: Now the code uses functions from the AwesomeWotlk library, we have name
 
 Potentially updated, fixed the bug where time-infinite auras (like flags on Warsong Gulch/Arathi Basin) weren't displaying, a mistake made by the author (Kader).
 I haven't noticed any fake auras on nameplates while testing.
-The difference from the default versions of PlateBuffs circulating on the internet: thanks to the AwesomeWotlk library, it works by GUID, so when a nameplate appears on screen after being hidden, the auras show up instantly. 
+The difference from the others versions of PlateBuffs circulating on the internet: thanks to the AwesomeWotlk library, it works by GUID, so when a nameplate appears on screen after being hidden, the auras show up instantly. 
 Additionally, there won’t be any duplicate auras on nameplates with the same name.
 The "watch combatlog" and "save player guid" options are no longer needed when using awesomewotlk.
 
