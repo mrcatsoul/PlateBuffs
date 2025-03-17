@@ -23,6 +23,8 @@ end
 local C_NamePlate = C_NamePlate
 local nameplateGuidToToken={}
 
+local UnitIsUnit = UnitIsUnit
+
 -- local
 core.title = "Plate Buffs"
 core.version = GetAddOnMetadata(folder, "X-Curse-Packaged-Version") or ""
@@ -308,29 +310,8 @@ local function PlateIsElite(plate)
 end
 core.PlateIsElite = PlateIsElite
 
---test
-local function GetNameplateByGuidTest(guid) 
-  local nameplateToken,nameplate
-
-  if C_NamePlate then
-    nameplateToken=nameplateGuidToToken[guid]
-  end
-  
-  if nameplateToken then
-    nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
-  else
-    nameplate = LibNameplates:GetNameplateByGUID(guid)
-  end
-
-  return nameplate
-end
-
 local function GetPlateByGUID(guid)
-  if C_NamePlate then
-    return GetNameplateByGuidTest(guid) 
-  else
-    return LibNameplates:GetNameplateByGUID(guid)
-  end
+  return LibNameplates:GetNameplateByGUID(guid)
 end
 core.GetPlateByGUID = GetPlateByGUID
 
@@ -431,6 +412,7 @@ function core:ShouldAddBuffs(plate)
   --print(plateName)
   
 	if P.showTotems == false and isTotem(plateName) then
+    --print("|cffff0000ShouldAddBuffs false",1)
 		return false
 	end
 
@@ -438,10 +420,12 @@ function core:ShouldAddBuffs(plate)
   
 	if (P.abovePlayers == true and plateType == "PLAYER") or (P.aboveNPC == true and plateType == "NPC") then
 		if plateType == "PLAYER" and P.playerCombatWithOnly == true and (not IsPlateInCombat(plate)) then
+      --print("|cffff0000ShouldAddBuffs false",2)
 			return false
 		end
 
 		if plateType == "NPC" and P.npcCombatWithOnly == true and (not IsPlateInCombat(plate) and GetPlateThreat(plate) == "LOW") then
+      --print("|cffff0000ShouldAddBuffs false",3)
 			return false
 		end
 
@@ -456,6 +440,8 @@ function core:ShouldAddBuffs(plate)
 			return true
 		end
 	end
+  
+  --print("|cffff0000ShouldAddBuffs false",4)
 
 	return false
 end
@@ -490,6 +476,7 @@ end
 function core:LibNameplates_FoundGUID(event, plate, GUID, unitID)
 	if self:ShouldAddBuffs(plate) == true then
 		if not guidBuffs[GUID] then
+      --print("|cff00ffffLibNameplates_FoundGUID")
 			self:CollectUnitInfo(unitID)
 		end
 
@@ -524,9 +511,8 @@ do
 	local UnitDebuff = UnitDebuff
 
 	function core:CollectUnitInfo(unitID)
-		if not unitID or unitID=="player" or UnitIsUnit(unitID, "player") or not UnitExists(unitID) then return end
+		if not unitID or unitID=="player" or UnitIsUnit(unitID, "player") then return end
 
-    
     --print("CollectUnitInfo",unitID)
     
     --test
@@ -685,24 +671,34 @@ do
 			end
 		end
 
-		if unitName and not self:UpdatePlateByGUID(GUID) and (UnitIsPlayer(unitID) or UnitClassification(unitID) == "worldboss") then
+    if C_NamePlate then
+      --self:UpdatePlateByGUID(GUID)
+      self:UpdatePlateByUnitID(unitID, GUID)
+		elseif unitName and not self:UpdatePlateByGUID(GUID) and (UnitIsPlayer(unitID) or UnitClassification(unitID) == "worldboss") then
 			-- LibNameplates can't find a nameplate that matches that GUID. Since the unitID's a player/worldboss which have unique names, add buffs to the frame that matches that name.
 			-- Note, this /can/ add buffs to the wrong frame if a hunter pet has the same name as a player. This is so rare that I'll risk it.
+      --print("UpdatePlateByNameUpdatePlateByNameUpdatePlateByNameUpdatePlateByName")
 			self:UpdatePlateByName(unitName, UnitHealthMax(unitID))
 		end
 	end
 end
 
 function core:PLAYER_TARGET_CHANGED(event, ...)
-	if UnitExists("target") then
-		self:CollectUnitInfo("target")
-	end
+  if --[[UnitIsUnit("target", "player") or]] not UnitExists("target") then return end
+  if C_NamePlate then
+    local plate = C_NamePlate.GetNamePlateForUnit("target")
+    if not plate or not plate:IsShown() then return end
+  end
+	self:CollectUnitInfo("target")
 end
 
 function core:UNIT_TARGET(event, unitID)
-	if not UnitIsUnit(unitID, "player") and UnitExists(unitID .. "target") then
-		self:CollectUnitInfo(unitID .. "target")
-	end
+  if --[[UnitIsUnit(unitID .. "target", "player") or]] not UnitExists(unitID .. "target") then return end
+  if C_NamePlate then
+    local plate = C_NamePlate.GetNamePlateForUnit(unitID .. "target")
+    if not plate or not plate:IsShown() then return end
+  end
+	self:CollectUnitInfo(unitID .. "target")
 end
 
 function core:LibNameplates_CombatChange(event, plate, inCombat)
@@ -722,17 +718,23 @@ function core:LibNameplates_ThreatChange(event, plate, threatSit)
 end
 
 function core:UPDATE_MOUSEOVER_UNIT(event, ...)
-	if UnitExists("mouseover") then
-		self:CollectUnitInfo("mouseover")
-	end
+  if --[[UnitIsUnit("mouseover", "player") or]] not UnitExists("mouseover") then return end
+  if C_NamePlate then
+    local plate = C_NamePlate.GetNamePlateForUnit("mouseover")
+    if not plate or not plate:IsShown() then return end
+  end
+	self:CollectUnitInfo("mouseover")
 end
 
 function core:UNIT_AURA(event, unitID)
-	--if UnitExists(unitID) then
-    --print(unitID)
-    --print(event, unitID)
-		self:CollectUnitInfo(unitID)
-	--end
+  --if UnitIsUnit(unitID, "player") then return end
+  if C_NamePlate then
+    if unitID:find("nameplate") and C_NamePlate.GetNamePlateForUnit(unitID):IsShown() then
+      self:CollectUnitInfo(unitID)
+    end
+  elseif not UnitIsUnit(unitID, "player") then
+    self:CollectUnitInfo(unitID)
+  end
 end
 
 function core:AddNewSpell(spellName, spellID)
@@ -750,19 +752,32 @@ function core:RemoveSpell(spellName)
 	core:BuildSpellUI()
 end
 
-function core:UpdatePlateByGUID(GUID)
-	local plate = GetPlateByGUID(GUID)
-  --print(GUID)
+function core:UpdatePlateByUnitID(unitID, GUID)
+	local plate = C_NamePlate.GetNamePlateForUnit(unitID)
+  --print("UpdatePlateByUnitID",plate,unitID,UnitName(unitID))
 	if plate and self:ShouldAddBuffs(plate) == true then
 		self:AddBuffsToPlate(plate, GUID)
 		return true
 	end
+  --print("|cffff0000UpdatePlateByUnitID - false",plate,unitID,GUID,UnitName(unitID))
+	return false
+end
+
+function core:UpdatePlateByGUID(GUID)
+	local plate = GetPlateByGUID(GUID)
+  --print("UpdatePlateByGUID",plate,unitID,UnitName(unitID))
+	if plate and self:ShouldAddBuffs(plate) == true then
+		self:AddBuffsToPlate(plate, GUID)
+		return true
+	end
+  --print("|cffff0000UpdatePlateByGUID - false",plate,GUID,UnitName(unitID))
 	return false
 end
 
 -- This will add buff frames to a frame matching a given name.
 -- This should only be used for player names because mobs/npcs can share the same name.
 function core:UpdatePlateByName(name, maxhp)
+  --print("|cffff0000UpdatePlateByName")
 	local GUID = nametoGUIDs[name]
 	if GUID then
 		local plate = GetPlateByName(name, maxhp)
@@ -929,56 +944,71 @@ if ( not C_Timer ) then
   core.C_Timer=C_Timer
 end
 
+local hookedPlates = {}
+
 do
   if C_NamePlate then
-    --++ 13.12.23  
-    local t=0
-    local function nameplatesOnUpdate(_, elapsed)
-      t=t+elapsed
-      if t < P.scanNameplatesInterval then return end
-      t=0
+    -- ++ 13.12.23  
+    -- local t=0
+    -- local function nameplatesOnUpdate(_, elapsed)
+      -- t=t+elapsed
+      -- if t < P.scanNameplatesInterval then return end
+      -- t=0
     
-      if not P.useAwesomeWotlkAPI or not C_NamePlate then return end
-      --print("nameplatesOnUpdate")
-      for _,data in pairs(nameplateGuidToToken) do
-        core:CollectUnitInfo(data)
-      end
-    end
+      -- if not P.useAwesomeWotlkAPI then return end
+      -- --print("nameplatesOnUpdate")
+      -- for _,nameplateToken in pairs(nameplateGuidToToken) do
+        -- core:CollectUnitInfo(nameplateToken)
+      -- end
+    -- end
 
     local f=CreateFrame("frame")
     f:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     f:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     f:RegisterEvent("ADDON_LOADED")
     --f:RegisterEvent("UNIT_AURA")
-    f:SetScript("OnUpdate", nameplatesOnUpdate) --++ 13.12.23 +nonstop update, maybe this is shitty way idk..
+    --f:SetScript("OnUpdate", nameplatesOnUpdate) --++ 13.12.23 +nonstop update, maybe this is shitty way idk..
     f:SetScript("OnEvent", function(self,event,...)
       if (event == "NAME_PLATE_UNIT_ADDED") then
         local nameplateToken = ...
         --print(nameplateToken)
-        if (nameplateToken) then
+        if nameplateToken then
           local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
-          if (nameplate) then
+          if nameplate then
+            nameplate.nameplateToken = nameplateToken
             local guid=UnitGUID(nameplateToken)
             if guid then
               nameplateGuidToToken[guid]=nameplateToken
             end
-            --print(nameplateToken)
-            core.C_Timer.After(0.1,function() 
-              --print("CollectUnitInfo",nameplateToken)
-              core:CollectUnitInfo(nameplateToken)
-            end)
+            if not hookedPlates[nameplate] then
+              hookedPlates[nameplate]=true
+              nameplate:HookScript("OnShow",function(s)
+                core.C_Timer.After(0.1,function()
+                  if s.nameplateToken and nameplate:IsShown() then
+                    --print("|cff0000ffonshow CollectUnitInfo",s.nameplateToken)
+                    core:CollectUnitInfo(s.nameplateToken)
+                  end
+                end)
+              end)
+              if nameplate:IsShown() then
+                core:CollectUnitInfo(nameplateToken)
+                --print("|cff00ffffnot hooked CollectUnitInfo",nameplateToken)
+              end
+            end
           end
         end
       elseif event == "NAME_PLATE_UNIT_REMOVED" then
+        --print(event)
         local nameplateToken = ...
-        if (nameplateToken) then
+        if nameplateToken then
           local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
-          if (nameplate) then
+          if nameplate then
             local guid=UnitGUID(nameplateToken)
             if guid then
               nameplateGuidToToken[guid]=nil
             end
             nameplate.plateBuffsDebuffsCount=nil
+            nameplate.nameplateToken=nil
           end
         end
       elseif event == "ADDON_LOADED" and arg1=="TestNameplates" then
