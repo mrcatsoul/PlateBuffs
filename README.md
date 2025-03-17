@@ -1,8 +1,8 @@
 WoW 3.3.5 addon. Kader's PlateBuffs - AwesomeWotlk mod.
 
-Fork of https://github.com/bkader/PlateBuffs_WoTLK
+Fork of: https://github.com/bkader/PlateBuffs_WoTLK
 
-Changes: AwesomeWotlk Edition for better aura detect and little more options. See https://github.com/FrostAtom/awesome_wotlk
+Changes: Now the code uses functions from the AwesomeWotlk library, we have nameplate tokens (UnitID), and thanks to this, their exact GUIDs. See: https://github.com/FrostAtom/awesome_wotlk
 
 Potentially updated, fixed the bug where time-infinite auras (like flags on Warsong Gulch/Arathi Basin) weren't displaying, a mistake made by the author (Kader).
 I haven't noticed any fake auras on nameplates while testing.
