@@ -100,7 +100,7 @@ defaultSettings.scanNameplatesInterval = 0.1 --++13.12.23
 defaultSettings.showStacks = true --++13.12.23
 defaultSettings.blackBorderForAll = false --++13.12.23
 defaultSettings.showCdBgTexture = true --++13.12.23
-defaultSettings.useAwesomeWotlkAPI = true --++13.12.23
+--defaultSettings.useAwesomeWotlkAPI = true --++13.12.23
 defaultSettings.textColoringRedToGreen = true --++13.12.23
 defaultSettings.fontFlags = "none" --++22.4.24
 defaultSettings.fontShadow = false --++22.4.24
@@ -530,12 +530,12 @@ core.CoreOptionsTable = {
       desc = "Green from begin to red at end",
 			order = 90,
 		},
-    useAwesomeWotlkAPI = { --++13.12.23
-			type = "toggle",
-			name = "|cff3377ddAwesomeWotlk: Nonstop scan (bad for performance in crowd scenes)|r",
-      desc = "Default: false",
-			order = 95,
-		},
+    -- useAwesomeWotlkAPI = { --++13.12.23
+			-- type = "toggle",
+			-- name = "|cff3377ddAwesomeWotlk: Nonstop scan (bad for performance in crowd scenes)|r",
+      -- desc = "Default: false",
+			-- order = 95,
+		-- },
 		fontFlags = { --++22.4.24
 			type = "select",
 			name = "|cff3377ddFont flags|r",
