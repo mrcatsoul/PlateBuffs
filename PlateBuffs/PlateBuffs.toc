@@ -3,7 +3,7 @@
 ## Title: Plate Buffs |cff00bbeeAwesomeWotlk Mod|r by |cFFC41F3BMori|r
 ## Version: 1.18.3 (r232), updated: 16/3/2025 (some random guy)
 ## Notes: Show auras on nameplates.
-## Author: Cyprias (Kader Backport). Mod/fork by some random guy. Version of: 16/3/2025. GitHub/YouTube/Discord/Telegram: @mrcatsoul, |cFFC41F3BTombstalker|r/|cFFffffffМораль|r/|cFFC41F3BMoriarty|r~WoWCircle WotLK. AwesomeWotlk library repository: https://github.com/FrostAtom/awesome_wotlk
+## Author: Cyprias (Kader Backport). Mod/fork by some random guy. Version of: 16/3/2025. GitHub/YouTube/Discord/Telegram: @mrcatsoul, |cFFC41F3BMori(x100)|r/|cFFC41F3BMoriarty(x5)|r~WoWCircle WotLK~WoWCircle WotLK. AwesomeWotlk library repository: https://github.com/FrostAtom/awesome_wotlk
 ## SavedVariables: PB_DB
 ## OptionalDeps: LibStub, CallbackHandler-1.0, LibNameplate-1.0
 ## X-Curse-Packaged-Version: r230
@@ -20,7 +20,7 @@
 ## X-License: All Rights Reserved
 ## X-Date: 2022-05-25 @ 10:45 AM |cff808080UTC|r
 
-## X-Maintained: Mod/fork by some random guy. Version of: 16/3/2025. GitHub/YouTube/Discord/Telegram: @mrcatsoul, |cFFC41F3BTombstalker|r/|cFFffffffМораль|r/|cFFC41F3BMoriarty|r~WoWCircle WotLK. AwesomeWotlk library repository: https://github.com/FrostAtom/awesome_wotlk
+## X-Maintained: Mod/fork by some random guy. Version of: 16/3/2025. GitHub/YouTube/Discord/Telegram: @mrcatsoul, |cFFC41F3BMori(x100)|r/|cFFC41F3BMoriarty(x5)|r~WoWCircle WotLK. AwesomeWotlk library repository: https://github.com/FrostAtom/awesome_wotlk
 
 ## LoadManagers: AddonLoader
 ## X-LoadOn-Always: true
