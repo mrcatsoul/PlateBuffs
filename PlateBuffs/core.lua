@@ -121,13 +121,15 @@ local defaultSpells2 = {
 	46924, --Bladestorm (warrior)
 	16689, --Nature's Grasp (Druid)
 	2983, --Sprint (rogue)
-	2335, --Swiftness Potion
-	6624, --Free Action Potion
-	3448, --Lesser Invisibility Potion
-	11464, --Invisibility Potion
-	17634, --Potion of Petrification
-	53905, --Indestructible Potion
-	54221, --Potion of Speed
+	2379, --Swiftness Potion
+	6615, --Free Action Potion
+	3680, --Lesser Invisibility Potion
+	11392, --Invisibility Potion
+	17624, --Potion of Petrification
+	53762, --Indestructible Potion
+	53908, --Potion of Speed
+  24364, --Living action pot
+  35477, --drums of speed
 	1850 --Dash
 }
 
@@ -939,10 +941,12 @@ if ( not C_Timer ) then
 	end
 
 	-- Global
-	--_G.C_Timer = C_Timer
+	_G.C_Timer = C_Timer
 	C_Timer._version = 2
   core.C_Timer=C_Timer
 end
+
+core.C_Timer=C_Timer
 
 local hookedPlates = {}
 
