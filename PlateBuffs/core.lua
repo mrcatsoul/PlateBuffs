@@ -21,7 +21,6 @@ if not LSM then
 end
 
 local C_NamePlate = C_NamePlate
-local nameplateGuidToToken={}
 
 local UnitIsUnit = UnitIsUnit
 
@@ -410,12 +409,12 @@ local function isTotem(name)
 end
 
 function core:ShouldAddBuffs(plate)
-	local plateName = GetPlateName(plate) or "UNKNOWN"
-  --print(plateName)
-  
-	if P.showTotems == false and isTotem(plateName) then
-    --print("|cffff0000ShouldAddBuffs false",1)
-		return false
+	if P.showTotems == false then
+    local plateName = GetPlateName(plate) or "UNKNOWN"
+    if isTotem(plateName) then
+      --print("|cffff0000ShouldAddBuffs false",1)
+      return false
+    end
 	end
 
 	local plateType = GetPlateType(plate)
@@ -946,77 +945,50 @@ if ( not C_Timer ) then
   core.C_Timer=C_Timer
 end
 
-core.C_Timer=C_Timer
+core.C_Timer = C_Timer
 
-local hookedPlates = {}
+local hookedPlates, plateUnit = {}, {}
 
 do
   if C_NamePlate then
-    -- ++ 13.12.23  
-    -- local t=0
-    -- local function nameplatesOnUpdate(_, elapsed)
-      -- t=t+elapsed
-      -- if t < P.scanNameplatesInterval then return end
-      -- t=0
-    
-      -- if not P.useAwesomeWotlkAPI then return end
-      -- --print("nameplatesOnUpdate")
-      -- for _,nameplateToken in pairs(nameplateGuidToToken) do
-        -- core:CollectUnitInfo(nameplateToken)
-      -- end
-    -- end
-
-    local f=CreateFrame("frame")
+    local f = CreateFrame("frame")
     f:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     f:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     f:RegisterEvent("ADDON_LOADED")
-    --f:RegisterEvent("UNIT_AURA")
-    --f:SetScript("OnUpdate", nameplatesOnUpdate) --++ 13.12.23 +nonstop update, maybe this is shitty way idk..
-    f:SetScript("OnEvent", function(self,event,...)
-      if (event == "NAME_PLATE_UNIT_ADDED") then
+    
+    f:SetScript("OnEvent", function(self, event, ...)
+      if event == "NAME_PLATE_UNIT_ADDED" then
         local nameplateToken = ...
-        --print(nameplateToken)
         if nameplateToken then
-          local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
-          if nameplate then
-            nameplate.nameplateToken = nameplateToken
-            local guid=UnitGUID(nameplateToken)
-            if guid then
-              nameplateGuidToToken[guid]=nameplateToken
+          local plate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
+          if plate then
+            plate.nameplateToken = nameplateToken
+            if plate:IsShown() then
+              core:CollectUnitInfo(nameplateToken)
             end
-            if not hookedPlates[nameplate] then
-              hookedPlates[nameplate]=true
-              nameplate:HookScript("OnShow",function(s)
-                core.C_Timer.After(0.1,function()
-                  if s.nameplateToken and nameplate:IsShown() then
-                    --print("|cff0000ffonshow CollectUnitInfo",s.nameplateToken)
-                    core:CollectUnitInfo(s.nameplateToken)
+            if not hookedPlates[plate] then
+              hookedPlates[plate] = true
+              plate:HookScript("OnShow", function(self)
+                core.C_Timer.After(0.1, function()
+                  if self and self.nameplateToken and self:IsShown() then
+                    core:CollectUnitInfo(self.nameplateToken)
                   end
                 end)
               end)
-              if nameplate:IsShown() then
-                core:CollectUnitInfo(nameplateToken)
-                --print("|cff00ffffnot hooked CollectUnitInfo",nameplateToken)
-              end
             end
           end
         end
       elseif event == "NAME_PLATE_UNIT_REMOVED" then
-        --print(event)
         local nameplateToken = ...
         if nameplateToken then
-          local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
-          if nameplate then
-            local guid=UnitGUID(nameplateToken)
-            if guid then
-              nameplateGuidToToken[guid]=nil
-            end
-            nameplate.plateBuffsDebuffsCount=nil
-            nameplate.nameplateToken=nil
+          local plate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
+          if plate then
+            plate.plateBuffsDebuffsCount = nil
+            plate.nameplateToken = nil
           end
         end
       elseif event == "ADDON_LOADED" and arg1=="TestNameplates" then
-        core.TestNameplates=true
+        core.TestNameplates = true
       end
     end)
   end
