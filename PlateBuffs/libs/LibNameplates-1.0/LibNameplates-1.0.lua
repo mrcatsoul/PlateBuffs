@@ -692,8 +692,8 @@ do
       if nameplateToken then
         local nameplate = C_NamePlate.GetNamePlateForUnit(nameplateToken)
         if nameplate then
-          nameplate.nameplateToken=nil
-          nameplate.unitReaction=nil
+          nameplate.nameplateToken = nil
+          nameplate.unitReaction = nil
         end
       end
     elseif event == "UNIT_FACTION" then
@@ -922,11 +922,12 @@ function lib:GetName(frame)
 	if not frame then return end
 	frame = self.realPlate[frame] or frame
   
-  if frame.origSavedName then
+  --if frame.origSavedName then
     --print("|cff00ff00lib:GetName|r (frame.origSavedName)")
-    return frame.origSavedName
-  elseif C_NamePlate then
+    --return frame.origSavedName
+  if C_NamePlate then
     local name = UnitName(self:C_NamePlate_GetUnitID(frame))
+    print("lib:GetName",name)
     if name then 
       return name
     end
