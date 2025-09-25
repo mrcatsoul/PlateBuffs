@@ -43,15 +43,7 @@ defaultSettings.profile.skin_Colors = {}
 -- NEW API ---------
 
 local GetPlateName = core.GetPlateName
-local GetPlateType = core.GetPlateType
-local IsPlateInCombat = core.IsPlateInCombat
-local GetPlateThreat = core.GetPlateThreat
-local GetPlateReaction = core.GetPlateReaction
 local GetPlateGUID = core.GetPlateGUID
-local PlateIsBoss = core.PlateIsBoss
-local PlateIsElite = core.PlateIsElite
-local GetPlateByGUID = core.GetPlateByGUID
-local GetPlateByName = core.GetPlateByName
 
 -------------------
 
@@ -938,10 +930,12 @@ end
 -- Reset bar anchors for a particular plate.
 function core:ResetPlateBarPoints(plate)--
 	if buffBars[plate][1] then
+    print("ResetPlateBarPoints1",plate.nameplateToken)
 		self:ResetBarPoint(buffBars[plate][1], plate)
 	end
 
 	for r = 2, table_getn(buffBars[plate]) do
+    print("ResetPlateBarPoints2",plate.nameplateToken)
 		buffBars[plate][r]:ClearAllPoints()
 		buffBars[plate][r]:SetPoint(P.barAnchorPoint, buffBars[plate][r - 1], P.plateAnchorPoint, 0, 0)
 	end
